@@ -15,6 +15,7 @@ static constexpr uint16_t M913_PID_WIRED = 0xfa08;  // wired / dual-mode USB
 static constexpr uint16_t COMPX_VID       = 0x3554;
 static constexpr uint16_t COMPX_PID       = 0xf55d;  // 2.4G wireless receiver
 static constexpr uint16_t COMPX_PID_WIRED = 0xf55e;  // wired / 3-mode USB
+static constexpr uint16_t COMPX_PID_M917_RECEIVER = 0xf5d5;  // M917-PRO 2.4G receiver
 
 // Packet size for all M913 control/interrupt transfers
 static constexpr int M913_PACKET_SIZE = 17;

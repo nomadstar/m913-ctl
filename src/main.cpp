@@ -407,6 +407,7 @@ int main(int argc, char* argv[]) {
             {M913_VID,  M913_PID_WIRED},
             {COMPX_VID, COMPX_PID},
             {COMPX_VID, COMPX_PID_WIRED},
+            {COMPX_VID, COMPX_PID_M917_RECEIVER},
         };
         bool opened = false;
         for (auto [v, p] : candidates) {
