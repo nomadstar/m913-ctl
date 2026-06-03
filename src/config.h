@@ -43,7 +43,7 @@ struct Config {
 Config parse_config_file(const std::string& path);
 
 // Validate a parsed Config and throw std::runtime_error if any value is out of range.
-void validate_config(const Config& cfg);
+void validate_config(const Config& cfg, bool is_compx);
 
 // Map INI button names to Button enum values.
 // Returns false if the name is not recognized.

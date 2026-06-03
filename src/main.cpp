@@ -46,6 +46,7 @@ Options:
 
   --dpi SLOT=VALUE         Set a DPI slot (1-5), e.g. --dpi 2=3200
   --led MODE               Set LED mode: off, rainbow, steady, respiration
+  --color HEX              Set LED color in hex (RRGGBB), e.g. --color ff0000
   --polling-rate HZ        Set USB polling rate: 125, 250, 500, or 1000 (Hz)
   --button NAME=ACTION     Remap a button, e.g. --button side1=f1
                            NAME: side1..12, left, right, middle, fire
@@ -228,6 +229,7 @@ int main(int argc, char* argv[]) {
         {"config",       required_argument, nullptr, 'c'},
         {"dpi",          required_argument, nullptr, 1001},
         {"led",          required_argument, nullptr, 1002},
+        {"color",        required_argument, nullptr, 1012},
         {"button",       required_argument, nullptr, 1003},
         {"list-actions",  no_argument,       nullptr, 1004},
         {"profile",       required_argument, nullptr, 1005},
@@ -250,6 +252,7 @@ int main(int argc, char* argv[]) {
     std::vector<DpiArg>   dpi_args;
     std::vector<BtnArg>   btn_args;
     std::string           led_arg;
+    std::string           color_arg;
     uint16_t              polling_rate_arg = 0;  // 0 = not set
 
     int opt;
@@ -281,8 +284,8 @@ int main(int argc, char* argv[]) {
                     std::cerr << "Error: DPI slot must be 1-5\n";
                     return 1;
                 }
-                if (val < 100 || val > 16000 || val % 100 != 0) {
-                    std::cerr << "Error: DPI value must be 100-16000 in steps of 100\n";
+                if (val < 50 || val > 26000 || val % 50 != 0) {
+                    std::cerr << "Error: DPI value must be 50-26000 in steps of 50\n";
                     return 1;
                 }
                 dpi_args.push_back({slot, static_cast<uint16_t>(val)});
@@ -295,6 +298,10 @@ int main(int argc, char* argv[]) {
 
         case 1002:  // --led MODE
             led_arg = optarg;
+            break;
+
+        case 1012:  // --color HEX
+            color_arg = optarg;
             break;
 
         case 1003: {  // --button NAME=ACTION
@@ -383,7 +390,7 @@ int main(int argc, char* argv[]) {
                     !raw_send_hex.empty() ||
                     !config_file.empty() ||
                     !dpi_args.empty() || !led_arg.empty() || !btn_args.empty() ||
-                    polling_rate_arg != 0;
+                    !color_arg.empty() || polling_rate_arg != 0;
     if (!has_work) {
         print_help(argv[0]);
         return 0;
@@ -598,7 +605,7 @@ int main(int argc, char* argv[]) {
             std::cout << "=== Applying config: " << config_file << " ===\n";
             Config cfg = parse_config_file(config_file);
             cfg.profile = profile;
-            validate_config(cfg);
+            validate_config(cfg, is_compx);
             apply_config(mouse, cfg, btn_layout, is_compx);
             did_config = true;
         }
@@ -607,6 +614,19 @@ int main(int argc, char* argv[]) {
         if (!dpi_args.empty()) {
             DpiSettings dpi;
             for (auto& [slot, val] : dpi_args) {
+                if (is_compx) {
+                    if (val < 50 || val > 26000 || val % 50 != 0) {
+                        std::cerr << "Error: DPI value " << val << " is out of range for Compx hardware (50–26000 in steps of 50)\n";
+                        exit_code = 1;
+                        goto cleanup;
+                    }
+                } else {
+                    if (val < 100 || val > 16000 || val % 100 != 0) {
+                        std::cerr << "Error: DPI value " << val << " is out of range (100–16000 in steps of 100)\n";
+                        exit_code = 1;
+                        goto cleanup;
+                    }
+                }
                 if (slot >= 1 && slot <= 5)
                     dpi.values[slot - 1] = val;
             }
@@ -634,12 +654,24 @@ int main(int argc, char* argv[]) {
                 exit_code = 1;
                 goto cleanup;
             }
+
+            uint32_t color = 0x00ff00;
+            if (!color_arg.empty()) {
+                try {
+                    color = std::stoul(color_arg, nullptr, 16);
+                } catch (...) {
+                    std::cerr << "Error: invalid hex color '" << color_arg << "'\n";
+                    exit_code = 1;
+                    goto cleanup;
+                }
+            }
+
             if (is_compx) {
-                uint32_t slot_color = (mode == LedMode::Off) ? 0x000000 : 0x00ff00;
+                uint32_t slot_color = (mode == LedMode::Off) ? 0x000000 : color;
                 uint32_t colors[5] = {slot_color, slot_color, slot_color, slot_color, slot_color};
                 send_sequence(mouse, build_compx_color_packets(colors, 5), "LED color");
             } else {
-                send_sequence(mouse, build_led_packets(mode), "LED mode");
+                send_sequence(mouse, build_led_packets(mode, color), "LED mode");
             }
             did_config = true;
         }

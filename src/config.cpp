@@ -239,7 +239,7 @@ Config parse_config_file(const std::string& path) {
 // Validation
 // -----------------------------------------------------------------------
 
-void validate_config(const Config& cfg) {
+void validate_config(const Config& cfg, bool is_compx) {
     if (cfg.mouse.set) {
         uint16_t r = cfg.mouse.polling_rate;
         if (r != 125 && r != 250 && r != 500 && r != 1000)
@@ -251,10 +251,17 @@ void validate_config(const Config& cfg) {
     for (int i = 0; i < 5; ++i) {
         uint16_t v = cfg.dpi[i].value;
         if (v == 0) continue;  // not configured, skip
-        if (v < 100 || v > 16000 || v % 100 != 0)
-            throw std::runtime_error(
-                "DPI" + std::to_string(i + 1) + " value " + std::to_string(v) +
-                " is out of range (100–16000 in steps of 100)");
+        if (is_compx) {
+            if (v < 50 || v > 26000 || v % 50 != 0)
+                throw std::runtime_error(
+                    "DPI" + std::to_string(i + 1) + " value " + std::to_string(v) +
+                    " is out of range for Compx hardware (50–26000 in steps of 50)");
+        } else {
+            if (v < 100 || v > 16000 || v % 100 != 0)
+                throw std::runtime_error(
+                    "DPI" + std::to_string(i + 1) + " value " + std::to_string(v) +
+                    " is out of range (100–16000 in steps of 100)");
+        }
     }
 
     for (auto& [key, action] : cfg.buttons) {

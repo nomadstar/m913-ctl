@@ -20,6 +20,12 @@ static const std::map<std::string, ActionBytes> mouse_actions = {
     {"dpi+",           {0x02, 0x02, 0x00, 0x51}},
     {"dpi-cycle",      {0x02, 0x01, 0x00, 0x52}},
     {"dpi-loop",       {0x02, 0x01, 0x00, 0x52}},  // alias
+    {"dpi_cycle",      {0x02, 0x01, 0x00, 0x52}},  // alias
+    {"dpi_loop",       {0x02, 0x01, 0x00, 0x52}},  // alias
+    {"compx-dpi-cycle",{0x08, 0xA2, 0x09, 0xA2}},
+    {"compx-dpi-loop", {0x08, 0xA2, 0x09, 0xA2}},  // alias
+    {"compx_dpi_cycle",{0x08, 0xA2, 0x09, 0xA2}},  // alias
+    {"compx_dpi_loop", {0x08, 0xA2, 0x09, 0xA2}},  // alias
     {"led_toggle",     {0x08, 0x00, 0x00, 0x4d}},
     {"rgb_toggle",     {0x08, 0x00, 0x00, 0x4d}},  // alias
     {"none",           {0x00, 0x00, 0x00, 0x55}},
@@ -167,6 +173,30 @@ static std::string to_lower(std::string s) {
 
 bool parse_action(const std::string& action_raw, ActionBytes& out) {
     std::string action = to_lower(action_raw);
+
+    // 0. Check for raw hex action: "hex:xx:xx:xx" or "hex:xx:xx:xx:xx"
+    if (action.substr(0, 4) == "hex:") {
+        auto parts = split(action, ':');
+        if (parts.size() == 5) {
+            try {
+                out[0] = static_cast<uint8_t>(std::stoul(parts[1], nullptr, 16));
+                out[1] = static_cast<uint8_t>(std::stoul(parts[2], nullptr, 16));
+                out[2] = static_cast<uint8_t>(std::stoul(parts[3], nullptr, 16));
+                out[3] = static_cast<uint8_t>(std::stoul(parts[4], nullptr, 16));
+                return true;
+            } catch (...) {}
+        } else if (parts.size() == 4) {
+            try {
+                uint8_t b0 = static_cast<uint8_t>(std::stoul(parts[1], nullptr, 16));
+                uint8_t b1 = static_cast<uint8_t>(std::stoul(parts[2], nullptr, 16));
+                uint8_t b2 = static_cast<uint8_t>(std::stoul(parts[3], nullptr, 16));
+                uint8_t checksum = static_cast<uint8_t>((0x55u - (b0 + b1 + b2)) & 0xFF);
+                out = {b0, b1, b2, checksum};
+                return true;
+            } catch (...) {}
+        }
+        return false;
+    }
 
     // 1. Check for fire button with parameters: "fire:speed:times"
     if (action.substr(0, 5) == "fire:") {

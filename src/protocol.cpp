@@ -424,10 +424,23 @@ std::vector<Packet> build_button_mapping(
                 buf[pkt][off + k] = kb_key_action[k];
         } else {
             // Direct action (mouse button, DPI cycle, etc.)
+            ActionBytes final_ab = ab;
+            if (layout) {
+                // For Compx hardware, automatically translate standard DPI cycle/loop to Compx bytes.
+                if (ab[0] == 0x02 && ab[1] == 0x01 && ab[2] == 0x00 && ab[3] == 0x52) {
+                    final_ab = {0x08, 0xA2, 0x09, static_cast<uint8_t>(proto_idx)};
+                }
+                // For Compx hardware, 0x08-category actions (device functions: LED, DPI, profile…)
+                // the 4th byte is the protocol slot index, NOT a checksum.
+                // Confirmed by Cfg.ini: K8_1=0x08,0xA2,0x09,0x08 where 0x08 = proto_idx.
+                else if (final_ab[0] == 0x08) {
+                    final_ab[3] = static_cast<uint8_t>(proto_idx);
+                }
+            }
             int pkt = proto_idx / 2;
             int off = (proto_idx % 2 == 0) ? 6 : 10;
             for (int k = 0; k < 4; ++k)
-                buf[pkt][off + k] = ab[k];
+                buf[pkt][off + k] = final_ab[k];
         }
     }
 
