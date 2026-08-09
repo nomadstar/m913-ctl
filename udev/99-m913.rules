@@ -8,6 +8,6 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="25a7", ATTRS{idProduct}=="fa08", MODE="0666
 
 # --- Newer hardware (Compx, VID 3554) ---
 # 2.4G wireless receiver (PID f55d)
-SUBSYSTEMS=="usb", ATTRS{idVendor}=="3554", ATTRS{idProduct}=="f55d", MODE="0666"
+SUBSYSTEMS=="usb", ATTRS{idVendor}=="3554", ATTRS{idProduct}=="f5d5", MODE="0666"
 # Wired / 3-mode USB (PID f55e)
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="3554", ATTRS{idProduct}=="f55e", MODE="0666"

@@ -13,7 +13,7 @@ static constexpr uint16_t M913_PID_WIRED = 0xfa08;  // wired / dual-mode USB
 
 // Redragon M913 newer hardware (Compx, VID 3554)
 static constexpr uint16_t COMPX_VID       = 0x3554;
-static constexpr uint16_t COMPX_PID       = 0xf55d;  // 2.4G wireless receiver
+static constexpr uint16_t COMPX_PID       = 0xf5d5;  // 2.4G wireless receiver
 static constexpr uint16_t COMPX_PID_WIRED = 0xf55e;  // wired / 3-mode USB
 
 // Packet size for all M913 control/interrupt transfers
