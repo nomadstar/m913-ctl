@@ -638,9 +638,17 @@ std::vector<Packet> build_compx_dpi_packets(const DpiSettings& dpi) {
     for (int i = 0; i < 5; ++i) {
         if (dpi.values[i] == 0) continue;
         uint8_t addr = static_cast<uint8_t>(0x0c + i * 0x04);
-        uint8_t code = static_cast<uint8_t>((dpi.values[i] / 50) - 1);
-        uint8_t inner = (0x55u - code - code) & 0xFF;
-        result.push_back(compx_packet(addr, 0x04, code, code, 0x00, inner));
+
+        uint32_t steps = (dpi.values[i] / 50) - 1;
+        uint8_t marker;
+        uint32_t offset;
+        if      (steps < 256) {marker = 0x00; offset = 0;   }
+        else if (steps < 512) {marker = 0x44; offset = 256; }
+        else                  {marker = 0x88; offset = 512; }
+
+        uint8_t code = static_cast<uint8_t>(steps - offset);
+        uint8_t inner = (0x55u - code - code - marker) & 0xFF;
+        result.push_back(compx_packet(addr, 0x04, code, code, marker, inner));
     }
 
     // Stage-count packet (addr=0x02): byte[6] = number of active stages,
